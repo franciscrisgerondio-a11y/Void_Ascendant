@@ -1,0 +1,2015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOID ASCENDANT</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void: #020408;
+  --deep: #060d14;
+  --surface: #0a1520;
+  --panel: #0d1d2e;
+  --border: #1a3a5c;
+  --cyan: #00f5ff;
+  --cyan-dim: #00a8b0;
+  --violet: #9b59ff;
+  --violet-dim: #6a3db0;
+  --red: #ff2244;
+  --gold: #f5c842;
+  --text: #c8e0f0;
+  --text-dim: #5a7a90;
+  --glow-cyan: 0 0 10px #00f5ff88, 0 0 30px #00f5ff33;
+  --glow-violet: 0 0 10px #9b59ff88, 0 0 30px #9b59ff33;
+  --glow-red: 0 0 10px #ff224488, 0 0 30px #ff224433;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--void);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: crosshair;
+}
+
+/* Animated background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, #00f5ff08 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, #9b59ff08 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#particles-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#app {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+  max-width: 1400px;
+  margin: 0 auto;
+  gap: 12px;
+  padding: 12px;
+}
+
+/* HEADER */
+#header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #0a1520cc, #060d14cc);
+  border: 1px solid var(--border);
+  border-bottom: 2px solid var(--cyan);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--glow-cyan), inset 0 0 40px #00f5ff08;
+}
+
+#header h1 {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  background: linear-gradient(90deg, var(--cyan), var(--violet), var(--cyan));
+  background-size: 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 4s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% }
+  100% { background-position: 200% }
+}
+
+#header-stats {
+  display: flex;
+  gap: 30px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+}
+
+.hstat { text-align: center; }
+.hstat-label { color: var(--text-dim); font-size: 10px; letter-spacing: 2px; }
+.hstat-value { color: var(--cyan); font-size: 16px; }
+
+/* LEFT PANEL */
+#left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* RIGHT PANEL */
+#right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* CENTER */
+#center-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* PANELS */
+.panel {
+  background: linear-gradient(135deg, var(--panel), var(--deep));
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  opacity: 0.5;
+}
+
+.panel-title {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--cyan-dim);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* REALM DISPLAY */
+#realm-panel {
+  text-align: center;
+}
+
+#realm-name {
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  margin-bottom: 4px;
+}
+
+#realm-stage {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+#realm-progress-bar {
+  height: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+#realm-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan-dim), var(--cyan));
+  transition: width 0.3s;
+  box-shadow: 0 0 8px var(--cyan);
+  width: 0%;
+}
+
+#realm-progress-text {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  text-align: right;
+}
+
+/* MAIN CLICK BUTTON */
+#click-area {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#click-btn {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 2px solid var(--cyan);
+  background: radial-gradient(circle at 35% 35%, #0d2a3a, var(--void));
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.1s, box-shadow 0.1s;
+  box-shadow: var(--glow-cyan), inset 0 0 40px #00f5ff15;
+  outline: none;
+}
+
+#click-btn::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px solid #00f5ff33;
+}
+
+#click-btn::after {
+  content: '';
+  position: absolute;
+  inset: 20px;
+  border-radius: 50%;
+  border: 1px solid #00f5ff22;
+}
+
+#click-btn:hover {
+  box-shadow: 0 0 20px #00f5ffaa, 0 0 60px #00f5ff44, inset 0 0 60px #00f5ff20;
+  transform: scale(1.03);
+}
+
+#click-btn:active {
+  transform: scale(0.95);
+}
+
+#click-btn-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+#click-symbol {
+  font-family: 'Cinzel', serif;
+  font-size: 36px;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  line-height: 1;
+  animation: pulse-symbol 2s ease-in-out infinite;
+}
+
+@keyframes pulse-symbol {
+  0%, 100% { opacity: 1; text-shadow: var(--glow-cyan); }
+  50% { opacity: 0.7; text-shadow: 0 0 5px var(--cyan); }
+}
+
+#click-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--cyan-dim);
+  margin-top: 6px;
+}
+
+/* Click ripple */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid var(--cyan);
+  pointer-events: none;
+  animation: ripple-out 0.6s ease-out forwards;
+}
+
+@keyframes ripple-out {
+  0% { width: 0; height: 0; opacity: 1; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+  100% { width: 300px; height: 300px; opacity: 0; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+}
+
+/* Floating damage numbers */
+.float-num {
+  position: fixed;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  pointer-events: none;
+  animation: float-up 1s ease-out forwards;
+  z-index: 9999;
+}
+
+@keyframes float-up {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+}
+
+/* ESSENCE DISPLAY */
+#essence-display {
+  text-align: center;
+  width: 100%;
+}
+
+#essence-value {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 28px;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  letter-spacing: 2px;
+}
+
+#essence-label {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+#essence-rate {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  color: var(--violet);
+  margin-top: 2px;
+}
+
+/* COMBAT */
+#combat-panel {
+  width: 100%;
+}
+
+#enemy-area {
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.enemy-card {
+  background: linear-gradient(135deg, #1a0a0d, #0d0510);
+  border: 1px solid #3a1020;
+  border-radius: 4px;
+  padding: 10px 12px;
+  position: relative;
+  overflow: hidden;
+  animation: enemy-appear 0.3s ease-out;
+}
+
+@keyframes enemy-appear {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.enemy-name {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  color: var(--red);
+  text-shadow: var(--glow-red);
+  margin-bottom: 6px;
+}
+
+.enemy-hp-bar {
+  height: 5px;
+  background: #1a0a0d;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.enemy-hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b0000, var(--red));
+  transition: width 0.2s;
+  box-shadow: 0 0 6px var(--red);
+}
+
+.enemy-stats {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+#wave-info {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+
+#no-enemy-msg {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 12px;
+  padding: 20px;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+/* TECHNIQUES */
+#techniques-panel { }
+
+#techniques-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.technique-btn {
+  background: linear-gradient(135deg, #0d1a2e, #060d14);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.technique-btn:hover:not(:disabled) {
+  border-color: var(--violet);
+  box-shadow: var(--glow-violet);
+}
+
+.technique-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.technique-btn.on-cooldown {
+  border-color: #2a1a4a;
+}
+
+.tech-name {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  color: var(--violet);
+  margin-bottom: 3px;
+}
+
+.tech-desc {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.tech-cd {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.tech-cooldown-bar {
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 2px;
+  background: var(--violet);
+  transition: width 0.1s linear;
+}
+
+/* UPGRADES */
+#upgrades-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+#upgrades-list::-webkit-scrollbar { width: 4px; }
+#upgrades-list::-webkit-scrollbar-track { background: var(--void); }
+#upgrades-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.upgrade-card {
+  background: linear-gradient(135deg, #0a1a2a, #060d14);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.upgrade-card:hover:not(.locked):not(.maxed) {
+  border-color: var(--cyan-dim);
+  box-shadow: 0 0 8px #00f5ff33;
+}
+
+.upgrade-card.locked { opacity: 0.4; cursor: not-allowed; }
+.upgrade-card.maxed { border-color: var(--gold); opacity: 0.7; cursor: default; }
+.upgrade-card.affordable { border-color: #1a4a3a; }
+
+.upgrade-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+
+.upgrade-name {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  color: var(--text);
+}
+
+.upgrade-count {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.upgrade-effect {
+  font-size: 11px;
+  color: var(--cyan-dim);
+  margin-bottom: 4px;
+}
+
+.upgrade-cost {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--gold);
+}
+
+.upgrade-cost.can-afford { color: #6eff90; }
+.upgrade-cost.cannot-afford { color: var(--text-dim); }
+
+/* KARMA / SOUL SHOP */
+#prestige-panel {}
+
+.prestige-stats {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pstat {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  text-align: center;
+}
+
+.pstat-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.pstat-value {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 16px;
+  color: var(--gold);
+}
+
+.prestige-btn {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, #1a0a00, #0d0500);
+  border: 1px solid #5a3a00;
+  border-radius: 4px;
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 6px;
+}
+
+.prestige-btn:hover:not(:disabled) {
+  box-shadow: 0 0 15px #f5c84255;
+  border-color: var(--gold);
+}
+
+.prestige-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.prestige-btn.ascension {
+  background: linear-gradient(135deg, #1a003a, #0d0025);
+  border-color: #5a00aa;
+  color: var(--violet);
+}
+
+.prestige-btn.ascension:hover:not(:disabled) {
+  box-shadow: var(--glow-violet);
+  border-color: var(--violet);
+}
+
+/* ACHIEVEMENTS */
+#achievements-panel {
+  grid-column: 1 / -1;
+}
+
+#achievements-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.achievement {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--text-dim);
+  transition: all 0.3s;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.achievement.unlocked {
+  border-color: var(--gold);
+  color: var(--gold);
+  text-shadow: 0 0 8px #f5c84255;
+  box-shadow: 0 0 8px #f5c84222;
+}
+
+/* TOAST */
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  background: linear-gradient(135deg, var(--panel), var(--deep));
+  border: 1px solid var(--cyan);
+  border-radius: 4px;
+  padding: 10px 16px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  color: var(--cyan);
+  box-shadow: var(--glow-cyan);
+  animation: toast-in 0.3s ease-out, toast-out 0.3s ease-in 2.7s forwards;
+  max-width: 280px;
+}
+
+.toast.gold {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 10px #f5c84255;
+}
+
+.toast.violet {
+  border-color: var(--violet);
+  color: var(--violet);
+  box-shadow: var(--glow-violet);
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(20px); }
+}
+
+/* BREAKTHROUGH OVERLAY */
+#breakthrough-overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle, #00f5ff22, transparent 70%);
+  z-index: 9998;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+#breakthrough-overlay.active {
+  opacity: 1;
+  animation: breakthrough-flash 1.5s ease-out forwards;
+}
+
+@keyframes breakthrough-flash {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+#breakthrough-text {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Cinzel', serif;
+  font-size: 36px;
+  font-weight: 900;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan), 0 0 60px var(--cyan);
+  letter-spacing: 8px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9999;
+  text-align: center;
+  white-space: nowrap;
+}
+
+#breakthrough-text.active {
+  animation: breakthrough-text-anim 2s ease-out forwards;
+}
+
+@keyframes breakthrough-text-anim {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  30% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  70% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -60%) scale(0.9); }
+}
+
+/* SAVE indicator */
+#save-indicator {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  z-index: 100;
+}
+
+/* Loot drops */
+.loot-drop {
+  position: fixed;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  pointer-events: none;
+  animation: loot-float 1.5s ease-out forwards;
+  z-index: 9999;
+}
+
+@keyframes loot-float {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-80px); }
+}
+
+/* Tabs for right panel */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.tab-btn.active {
+  border-color: var(--cyan-dim);
+  color: var(--cyan);
+  background: #0a1a2a;
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* KARMA SHOP */
+.karma-upgrade {
+  background: linear-gradient(135deg, #1a1200, #0d0900);
+  border: 1px solid #3a2800;
+  border-radius: 4px;
+  padding: 10px;
+  cursor: pointer;
+  margin-bottom: 6px;
+  transition: all 0.2s;
+}
+
+.karma-upgrade:hover:not(.maxed) {
+  border-color: var(--gold);
+  box-shadow: 0 0 8px #f5c84233;
+}
+
+.karma-upgrade.maxed { opacity: 0.6; cursor: default; }
+
+.ku-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.ku-name { font-family: 'Cinzel', serif; font-size: 11px; color: var(--gold); }
+.ku-effect { font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
+.ku-cost { font-family: 'Share Tech Mono', monospace; font-size: 11px; }
+
+/* Soul shop */
+.soul-upgrade {
+  background: linear-gradient(135deg, #0f0030, #07001a);
+  border: 1px solid #3a0060;
+  border-radius: 4px;
+  padding: 10px;
+  cursor: pointer;
+  margin-bottom: 6px;
+  transition: all 0.2s;
+}
+
+.soul-upgrade:hover:not(.maxed) {
+  border-color: var(--violet);
+  box-shadow: var(--glow-violet);
+}
+
+.soul-upgrade.maxed { opacity: 0.6; cursor: default; }
+.su-name { font-family: 'Cinzel', serif; font-size: 11px; color: var(--violet); }
+.su-effect { font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
+.su-cost { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--violet); }
+
+/* scrollbar for upgrade tabs */
+.tab-content {
+  max-height: 380px;
+  overflow-y: auto;
+}
+.tab-content::-webkit-scrollbar { width: 4px; }
+.tab-content::-webkit-scrollbar-track { background: var(--void); }
+.tab-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+</style>
+</head>
+<body>
+
+<canvas id="particles-canvas"></canvas>
+<div id="breakthrough-overlay"></div>
+<div id="breakthrough-text"></div>
+<div id="toast-container"></div>
+<div id="save-indicator">⬡ AUTO-SAVE</div>
+
+<div id="app">
+
+  <!-- HEADER -->
+  <div id="header">
+    <h1>VOID ASCENDANT</h1>
+    <div id="header-stats">
+      <div class="hstat">
+        <div class="hstat-label">VOID ESSENCE</div>
+        <div class="hstat-value" id="h-essence">0</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-label">PER SEC</div>
+        <div class="hstat-value" id="h-rate">0</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-label">KARMA</div>
+        <div class="hstat-value" id="h-karma" style="color:var(--gold)">0</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-label">SOUL FRAGS</div>
+        <div class="hstat-value" id="h-soul" style="color:var(--violet)">0</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-label">WAVE</div>
+        <div class="hstat-value" id="h-wave">1</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEFT PANEL -->
+  <div id="left-panel">
+
+    <!-- Realm Panel -->
+    <div class="panel" id="realm-panel">
+      <div class="panel-title">Current Realm</div>
+      <div id="realm-name">Hollow Mortal</div>
+      <div id="realm-stage">Stage I / X</div>
+      <div id="realm-progress-bar"><div id="realm-progress-fill"></div></div>
+      <div id="realm-progress-text">0 / 100 VE</div>
+    </div>
+
+    <!-- Combat Panel -->
+    <div class="panel" id="combat-panel">
+      <div class="panel-title">Void Battlefield</div>
+      <div id="wave-info">
+        <span id="wave-label">Wave <span id="wave-num">1</span></span>
+        <span id="wave-timer-label">Next: <span id="wave-timer">30</span>s</span>
+      </div>
+      <div id="enemy-area">
+        <div id="no-enemy-msg">⬡ Awaiting enemies...</div>
+      </div>
+    </div>
+
+    <!-- Techniques Panel -->
+    <div class="panel" id="techniques-panel">
+      <div class="panel-title">Techniques</div>
+      <div id="techniques-grid"></div>
+    </div>
+
+  </div>
+
+  <!-- CENTER PANEL -->
+  <div id="center-panel">
+
+    <!-- Essence Display -->
+    <div class="panel" style="width:100%; text-align:center; padding: 16px 20px;" id="essence-display">
+      <div id="essence-label">VOID ESSENCE</div>
+      <div id="essence-value">0</div>
+      <div id="essence-rate">+0 VE/sec</div>
+    </div>
+
+    <!-- Click Area -->
+    <div id="click-area">
+      <button id="click-btn" onclick="handleClick(event)">
+        <div id="click-btn-inner">
+          <div id="click-symbol">⬡</div>
+          <div id="click-label">CULTIVATE</div>
+        </div>
+      </button>
+    </div>
+
+    <!-- Achievements -->
+    <div class="panel" id="achievements-panel">
+      <div class="panel-title">Achievements</div>
+      <div id="achievements-list"></div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right-panel">
+
+    <!-- Upgrades -->
+    <div class="panel" style="flex:1">
+      <div class="panel-title">Upgrades & Prestige</div>
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('upgrades')">Upgrades</button>
+        <button class="tab-btn" onclick="switchTab('karma')">Karma</button>
+        <button class="tab-btn" onclick="switchTab('soul')">Soul</button>
+        <button class="tab-btn" onclick="switchTab('prestige')">Ascend</button>
+      </div>
+
+      <div id="tab-upgrades" class="tab-content active">
+        <div id="upgrades-list"></div>
+      </div>
+      <div id="tab-karma" class="tab-content">
+        <div style="margin-bottom:10px; font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--gold)">Karma: <span id="karma-display">0</span></div>
+        <div id="karma-shop"></div>
+      </div>
+      <div id="tab-soul" class="tab-content">
+        <div style="margin-bottom:10px; font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--violet)">Soul Fragments: <span id="soul-display">0</span></div>
+        <div id="soul-shop"></div>
+      </div>
+      <div id="tab-prestige" class="tab-content">
+        <div class="prestige-stats">
+          <div class="pstat">
+            <div class="pstat-label">KARMA</div>
+            <div class="pstat-value" id="p-karma">0</div>
+          </div>
+          <div class="pstat">
+            <div class="pstat-label">SOUL</div>
+            <div class="pstat-value" id="p-soul" style="color:var(--violet)">0</div>
+          </div>
+        </div>
+        <div style="font-size:11px; color:var(--text-dim); margin-bottom:12px; line-height:1.6">
+          <b style="color:var(--gold)">Reincarnation</b> resets your realm & upgrades. Earn Karma based on highest realm. Karma buys permanent buffs.<br><br>
+          <b style="color:var(--violet)">Ascension</b> requires reaching <b style="color:var(--cyan)">The Last Axiom</b>. Resets everything including Karma. Earns Soul Fragments.
+        </div>
+        <button class="prestige-btn" id="reincarnate-btn" onclick="reincarnate()">⟳ REINCARNATE</button>
+        <div id="reincarnate-info" style="font-size:10px; color:var(--text-dim); margin-bottom:12px; font-family:'Share Tech Mono',monospace"></div>
+        <button class="prestige-btn ascension" id="ascend-btn" onclick="ascend()" disabled>△ ASCEND</button>
+        <div id="ascend-info" style="font-size:10px; color:var(--text-dim); margin-top:6px; font-family:'Share Tech Mono',monospace">Reach The Last Axiom to Ascend.</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// ==============================
+// GAME DATA
+// ==============================
+
+const REALMS = [
+  { name: "Hollow Mortal",   lore: "You are nothing. Flesh and noise.",                      stageVE: 100,    color: "#5a7a90" },
+  { name: "Qi-Spark",        lore: "A flicker of Void stirs within your core.",              stageVE: 500,    color: "#00c8d0" },
+  { name: "Data Vein",       lore: "Your meridians rewrite themselves in code.",             stageVE: 2000,   color: "#00f5ff" },
+  { name: "Iron Circuit",    lore: "Body becomes machine. Pain becomes signal.",             stageVE: 8000,   color: "#7ab8ff" },
+  { name: "Fracture Core",   lore: "Your soul cracks open — light pours out.",               stageVE: 30000,  color: "#a077ff" },
+  { name: "Null Sovereign",  lore: "You bend reality around your will.",                     stageVE: 100000, color: "#9b59ff" },
+  { name: "Starweave",       lore: "You pull constellations through your spine.",            stageVE: 400000, color: "#ff77bb" },
+  { name: "Voidborn",        lore: "Space fears you. Time negotiates with you.",             stageVE: 1500000,color: "#ff99ff" },
+  { name: "Eternal Signal",  lore: "Your existence is a frequency the universe can't silence.", stageVE: 6000000, color: "#ffcc66" },
+  { name: "The Last Axiom",  lore: "You ARE the law.",                                       stageVE: 20000000, color: "#f5c842" },
+];
+
+const UPGRADES = [
+  { id:"void_med",   name:"Void Meditation",    effect:"Passive VE/sec",        baseCost:50,    costMult:1.6, baseEffect:0.5, maxLevel:50 },
+  { id:"qi_pulse",   name:"Qi Pulse",           effect:"Click power",           baseCost:100,   costMult:1.7, baseEffect:1,   maxLevel:50 },
+  { id:"q_meridian", name:"Quantum Meridian",   effect:"VE/sec ×1.2 per level", baseCost:800,   costMult:1.8, baseEffect:0.2, maxLevel:30 },
+  { id:"frac_array", name:"Fracture Array",     effect:"Click power ×1.5",      baseCost:2000,  costMult:2.0, baseEffect:0.5, maxLevel:20 },
+  { id:"sig_amp",    name:"Signal Amplifier",   effect:"Auto-attack speed",     baseCost:500,   costMult:1.9, baseEffect:0.1, maxLevel:40 },
+  { id:"relic_core", name:"Relic Core",         effect:"Unlocks relic bonus",   baseCost:5000,  costMult:2.2, baseEffect:0.3, maxLevel:15 },
+  { id:"void_lens",  name:"Void Lens",          effect:"Click → VE/sec bonus",  baseCost:10000, costMult:2.5, baseEffect:0.01,maxLevel:20 },
+  { id:"samsara_eng",name:"Samsara Engine",     effect:"Multiplies all VE",     baseCost:50000, costMult:3.0, baseEffect:0.1, maxLevel:10 },
+];
+
+const KARMA_UPGRADES = [
+  { id:"void_sense",    name:"Void Sense",      desc:"+10% VE/sec per level",    cost:3,  costMult:2,   max:10, effect:"veRate", value:0.1 },
+  { id:"undying_code",  name:"Undying Code",    desc:"Start at Qi-Spark realm",  cost:5,  costMult:99,  max:1,  effect:"startRealm", value:1 },
+  { id:"eternal_mem",   name:"Eternal Memory",  desc:"Keep 1 upgrade on reset",  cost:8,  costMult:99,  max:1,  effect:"keepUpgrade", value:1 },
+  { id:"samsara_karma", name:"Samsara Compounding", desc:"+5% multiplier per reincarnation", cost:10, costMult:2, max:10, effect:"reincMult", value:0.05 },
+  { id:"qi_memory",     name:"Qi Memory",       desc:"+20% click power",         cost:4,  costMult:2,   max:10, effect:"clickMult", value:0.2 },
+];
+
+const SOUL_UPGRADES = [
+  { id:"void_burst2",   name:"Enhanced Void Burst", desc:"Void Burst deals 3x damage", cost:2,  max:1, effect:"boostBurst" },
+  { id:"body_path",     name:"Body Cultivation",    desc:"+50% click power permanently", cost:3, max:3, effect:"bodyPath" },
+  { id:"tech_path",     name:"Tech Cultivation",    desc:"+50% VE/sec permanently",    cost:3,  max:3, effect:"techPath" },
+  { id:"alt_realm",     name:"Void Realm Unlocked", desc:"Extra realm after Axiom",    cost:5,  max:1, effect:"altRealm" },
+  { id:"mind_path",     name:"Mind Cultivation",    desc:"Techniques recharge 30% faster", cost:4, max:3, effect:"mindPath" },
+];
+
+const ENEMIES = [
+  { name:"Phantom Drone",         hpMult:1,   atk:1,   essenceDrop:10,  type:"common" },
+  { name:"Corrupted Cultivator",  hpMult:2,   atk:2,   essenceDrop:30,  type:"medium", dropShard:true },
+  { name:"Void Beast",            hpMult:4,   atk:3,   essenceDrop:80,  type:"tanky",  dropRelic:true },
+  { name:"Realm Guardian",        hpMult:15,  atk:5,   essenceDrop:300, type:"miniboss", dropShard:true, dropRelic:true },
+  { name:"Heaven Lord",           hpMult:50,  atk:10,  essenceDrop:1500,type:"boss",   dropSoul:true },
+];
+
+const TECHNIQUES = [
+  { id:"void_burst",  name:"Void Burst",  desc:"Click spike ×20",   cooldown:15000, locked:false },
+  { id:"null_field",  name:"Null Field",  desc:"Freeze enemies 3s",  cooldown:25000, locked:true },
+  { id:"soul_pulse",  name:"Soul Pulse",  desc:"Drain HP→Essence",   cooldown:20000, locked:true },
+  { id:"heaven_rend", name:"Heaven Rend", desc:"AoE all enemies",    cooldown:40000, locked:true },
+];
+
+const ACHIEVEMENTS = [
+  { id:"first_spark",   label:"First Spark",       check: g => g.realmIndex >= 1 },
+  { id:"blood_code",    label:"Blood & Code",       check: g => g.bossesKilled >= 1 },
+  { id:"ten_k_clicks",  label:"10k Strikes",        check: g => g.totalClicks >= 10000 },
+  { id:"cycle_breaker", label:"Cycle Breaker",      check: g => g.reincarnations >= 1 },
+  { id:"heaven_debris", label:"Heaven's Debris",    check: g => g.heavenLordsKilled >= 1 },
+  { id:"axiom_reached", label:"Axiom Reached",      check: g => g.realmIndex >= 9 },
+  { id:"first_ascension",label:"First Ascension",   check: g => g.ascensions >= 1 },
+  { id:"undying",       label:"Undying",             check: g => g.reincarnations >= 10 },
+  { id:"void_rich",     label:"Void Hoarder",        check: g => g.totalEssenceEarned >= 1000000 },
+  { id:"wave_100",      label:"Wave Conqueror",      check: g => g.wave >= 100 },
+];
+
+// ==============================
+// GAME STATE
+// ==============================
+let G = defaultState();
+
+function defaultState() {
+  return {
+    essence: 0,
+    veRate: 0,
+    clickPower: 1,
+    realmIndex: 0,
+    realmStage: 0,    // 0-9 within realm
+    realmProgress: 0,
+
+    upgrades: {}, // id -> level
+    techniqueCooldowns: {}, // id -> timestamp
+    techniquesUnlocked: ["void_burst"],
+
+    wave: 1,
+    waveTimer: 30,
+    enemies: [],
+    autoAttack: 1,
+
+    karma: 0,
+    totalKarma: 0,
+    karmaUpgrades: {},
+    soulFragments: 0,
+    totalSoulFragments: 0,
+    soulUpgrades: {},
+
+    reincarnations: 0,
+    ascensions: 0,
+    totalClicks: 0,
+    totalEssenceEarned: 0,
+    bossesKilled: 0,
+    heavenLordsKilled: 0,
+    achievementsUnlocked: [],
+
+    techniqueShardsEarned: 0,
+    relicFragmentsEarned: 0,
+
+    // Permanent multipliers
+    permVeRateMult: 1,
+    permClickMult: 1,
+    permTechCdMult: 1,
+  };
+}
+
+// ==============================
+// COMPUTED STATS
+// ==============================
+function getVeRate() {
+  let base = 0;
+  // Void Meditation
+  const vm = G.upgrades["void_med"] || 0;
+  base += vm * 0.5;
+  // Signal Amplifier bonus
+  const sa = G.upgrades["sig_amp"] || 0;
+  base += sa * 0.3;
+
+  // Quantum Meridian multiplier
+  const qm = G.upgrades["q_meridian"] || 0;
+  let mult = Math.pow(1.2, qm);
+
+  // Samsara Engine multiplier
+  const se = G.upgrades["samsara_eng"] || 0;
+  mult *= Math.pow(1.5, se);
+
+  // Void Lens (clickPower→rate)
+  const vl = G.upgrades["void_lens"] || 0;
+  base += getClickPower() * vl * 0.01;
+
+  // Karma: void_sense
+  const vs = G.karmaUpgrades["void_sense"] || 0;
+  const techMult = 1 + vs * 0.1;
+
+  // Soul: techPath
+  const tp = G.soulUpgrades["tech_path"] || 0;
+  const soulMult = Math.pow(1.5, tp);
+
+  // Reincarnation multiplier via samsara_karma
+  const sk = G.karmaUpgrades["samsara_karma"] || 0;
+  const reincMult = 1 + (G.reincarnations * sk * 0.05);
+
+  return base * mult * techMult * soulMult * reincMult * G.permVeRateMult;
+}
+
+function getClickPower() {
+  let base = 1;
+  const qp = G.upgrades["qi_pulse"] || 0;
+  base += qp * 1;
+  const fa = G.upgrades["frac_array"] || 0;
+  base *= Math.pow(1.5, fa);
+
+  // Karma: qi_memory
+  const qm = G.karmaUpgrades["qi_memory"] || 0;
+  base *= 1 + qm * 0.2;
+
+  // Soul: body_path
+  const bp = G.soulUpgrades["body_path"] || 0;
+  base *= Math.pow(1.5, bp);
+
+  return base * G.permClickMult;
+}
+
+function getAutoAttack() {
+  let base = 1;
+  const sa = G.upgrades["sig_amp"] || 0;
+  base += sa * 0.5;
+  const rc = G.upgrades["relic_core"] || 0;
+  base += rc * 1;
+  return base;
+}
+
+function getUpgradeCost(up) {
+  const level = G.upgrades[up.id] || 0;
+  return Math.floor(up.baseCost * Math.pow(up.costMult, level));
+}
+
+function getKarmaUpgradeCost(ku) {
+  const level = G.karmaUpgrades[ku.id] || 0;
+  return Math.floor(ku.cost * Math.pow(ku.costMult, level));
+}
+
+function getRealmVEThreshold() {
+  const realm = REALMS[G.realmIndex];
+  return Math.floor(realm.stageVE * Math.pow(2.5, G.realmStage));
+}
+
+function getAutoAttackInterval() {
+  const sa = G.upgrades["sig_amp"] || 0;
+  const mp = G.soulUpgrades["mind_path"] || 0;
+  const base = Math.max(500, 2000 - sa * 80);
+  return base * (1 - mp * 0.1);
+}
+
+// ==============================
+// CLICK HANDLER
+// ==============================
+function handleClick(e) {
+  const power = getClickPower();
+  addEssence(power);
+  G.totalClicks++;
+
+  // Ripple
+  const btn = document.getElementById("click-btn");
+  const ripple = document.createElement("div");
+  ripple.className = "ripple";
+  btn.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 700);
+
+  // Floating number
+  showFloatNum(`+${formatNum(power)}`, e.clientX, e.clientY, "var(--cyan)");
+
+  // Attack enemies
+  attackEnemies(power * 0.5);
+}
+
+// ==============================
+// ESSENCE
+// ==============================
+function addEssence(amount) {
+  G.essence += amount;
+  G.totalEssenceEarned += amount;
+  updateRealmProgress(amount);
+}
+
+function formatNum(n) {
+  if (n >= 1e15) return (n/1e15).toFixed(2) + "Q";
+  if (n >= 1e12) return (n/1e12).toFixed(2) + "T";
+  if (n >= 1e9)  return (n/1e9).toFixed(2)  + "B";
+  if (n >= 1e6)  return (n/1e6).toFixed(2)  + "M";
+  if (n >= 1e3)  return (n/1e3).toFixed(1)  + "K";
+  return Math.floor(n).toString();
+}
+
+// ==============================
+// REALM PROGRESSION
+// ==============================
+function updateRealmProgress(gained) {
+  G.realmProgress += gained;
+  const threshold = getRealmVEThreshold();
+
+  while (G.realmProgress >= threshold) {
+    G.realmProgress -= threshold;
+    G.realmStage++;
+
+    if (G.realmStage >= 10) {
+      G.realmStage = 0;
+      if (G.realmIndex < REALMS.length - 1) {
+        G.realmIndex++;
+        showBreakthrough(REALMS[G.realmIndex].name);
+        unlockThingsForRealm();
+        // Check ascension
+        updateAscendBtn();
+      } else {
+        G.realmProgress = 0;
+      }
+    }
+  }
+}
+
+function unlockThingsForRealm() {
+  // Unlock techniques by realm
+  if (G.realmIndex >= 2 && !G.techniquesUnlocked.includes("null_field"))
+    G.techniquesUnlocked.push("null_field");
+  if (G.realmIndex >= 4 && !G.techniquesUnlocked.includes("soul_pulse"))
+    G.techniquesUnlocked.push("soul_pulse");
+  if (G.realmIndex >= 6 && !G.techniquesUnlocked.includes("heaven_rend"))
+    G.techniquesUnlocked.push("heaven_rend");
+}
+
+function showBreakthrough(realmName) {
+  const overlay = document.getElementById("breakthrough-overlay");
+  const text = document.getElementById("breakthrough-text");
+  text.textContent = "BREAKTHROUGH: " + realmName.toUpperCase();
+  overlay.className = "";
+  text.className = "";
+  void overlay.offsetWidth;
+  overlay.classList.add("active");
+  text.classList.add("active");
+  showToast("⚡ Breakthrough! " + realmName, "cyan");
+  setTimeout(() => {
+    overlay.classList.remove("active");
+    text.classList.remove("active");
+  }, 2000);
+}
+
+// ==============================
+// COMBAT
+// ==============================
+function spawnWave() {
+  G.enemies = [];
+  const waveNum = G.wave;
+  let count = 1 + Math.floor(waveNum / 5);
+  count = Math.min(count, 4);
+
+  const isBoss = waveNum % 10 === 0;
+  const isHeavenLord = waveNum % 50 === 0;
+
+  for (let i = 0; i < count; i++) {
+    let enemyTemplate;
+    if (isHeavenLord && i === 0) enemyTemplate = ENEMIES[4];
+    else if (isBoss && i === 0) enemyTemplate = ENEMIES[3];
+    else {
+      const r = Math.random();
+      if (r < 0.5) enemyTemplate = ENEMIES[0];
+      else if (r < 0.8) enemyTemplate = ENEMIES[1];
+      else enemyTemplate = ENEMIES[2];
+    }
+
+    const scale = 1 + waveNum * 0.1;
+    const maxHp = Math.floor(enemyTemplate.hpMult * 50 * scale);
+    G.enemies.push({
+      ...enemyTemplate,
+      maxHp,
+      hp: maxHp,
+      id: Date.now() + i,
+    });
+  }
+}
+
+function attackEnemies(dmg) {
+  if (!G.enemies.length) return;
+  const enemy = G.enemies[0];
+  enemy.hp -= dmg;
+  if (enemy.hp <= 0) killEnemy(0);
+}
+
+function autoAttackTick() {
+  if (!G.enemies.length) return;
+  const dmg = getAutoAttack();
+  const enemy = G.enemies[0];
+  enemy.hp -= dmg;
+  if (enemy.hp <= 0) killEnemy(0);
+}
+
+function enemyAttackTick() {
+  G.enemies.forEach(e => {
+    // Just flavor — no player HP yet, just visual later
+  });
+}
+
+function killEnemy(idx) {
+  const e = G.enemies[idx];
+  const drop = e.essenceDrop * (1 + G.wave * 0.05);
+  addEssence(drop);
+  showLootDrop(`+${formatNum(drop)} VE`, "var(--gold)");
+
+  if (e.dropShard) {
+    G.techniqueShardsEarned++;
+    showLootDrop("✦ Technique Shard", "var(--cyan)");
+  }
+  if (e.dropRelic) {
+    G.relicFragmentsEarned++;
+    showLootDrop("◈ Relic Fragment", "var(--violet)");
+  }
+  if (e.dropSoul) {
+    // Soul fragments earned on boss kill (small amount)
+    showLootDrop("◉ Soul Fragment", "var(--violet)");
+  }
+  if (e.type === "miniboss" || e.type === "boss") G.bossesKilled++;
+  if (e.type === "boss") G.heavenLordsKilled++;
+
+  G.enemies.splice(idx, 1);
+}
+
+function showLootDrop(text, color) {
+  const el = document.createElement("div");
+  el.className = "loot-drop";
+  el.style.color = color;
+  el.style.left = (100 + Math.random() * 100) + "px";
+  el.style.top = (200 + Math.random() * 100) + "px";
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1500);
+}
+
+// ==============================
+// TECHNIQUES
+// ==============================
+function useTechnique(id) {
+  const now = Date.now();
+  const cd = getTechniqueCD(id);
+  if (G.techniqueCooldowns[id] && now - G.techniqueCooldowns[id] < cd) return;
+  G.techniqueCooldowns[id] = now;
+
+  if (id === "void_burst") {
+    const mult = G.soulUpgrades["void_burst2"] ? 3 : 1;
+    const dmg = getClickPower() * 20 * mult;
+    attackEnemies(dmg);
+    showToast("⚡ Void Burst!", "cyan");
+    showFloatNum(`VOID BURST ×${formatNum(dmg)}`, window.innerWidth/2, window.innerHeight/2, "var(--cyan)");
+  } else if (id === "null_field") {
+    G.enemies.forEach(e => e.frozen = Date.now() + 3000);
+    showToast("❄ Null Field — enemies frozen!", "cyan");
+  } else if (id === "soul_pulse") {
+    const total = G.enemies.reduce((s, e) => s + e.hp, 0);
+    const drain = total * 0.3;
+    G.enemies.forEach(e => { e.hp -= e.hp * 0.3; });
+    G.enemies = G.enemies.filter(e => e.hp > 0);
+    addEssence(drain);
+    showToast("◉ Soul Pulse — drained essence!", "violet");
+  } else if (id === "heaven_rend") {
+    G.enemies.forEach((e, i) => attackEnemies(getClickPower() * 10));
+    G.enemies = G.enemies.filter(e => e.hp > 0);
+    showToast("⚔ Heaven Rend — AoE strike!", "violet");
+  }
+}
+
+function getTechniqueCD(id) {
+  const t = TECHNIQUES.find(t => t.id === id);
+  const mp = G.soulUpgrades["mind_path"] || 0;
+  return t.cooldown * (1 - mp * 0.1) * (G.permTechCdMult || 1);
+}
+
+// ==============================
+// UPGRADES
+// ==============================
+function buyUpgrade(id) {
+  const up = UPGRADES.find(u => u.id === id);
+  const level = G.upgrades[id] || 0;
+  if (level >= up.maxLevel) return;
+  const cost = getUpgradeCost(up);
+  if (G.essence < cost) return;
+  G.essence -= cost;
+  G.upgrades[id] = level + 1;
+}
+
+function buyKarmaUpgrade(id) {
+  const ku = KARMA_UPGRADES.find(k => k.id === id);
+  const level = G.karmaUpgrades[id] || 0;
+  if (level >= ku.max) return;
+  const cost = getKarmaUpgradeCost(ku);
+  if (G.karma < cost) return;
+  G.karma -= cost;
+  G.karmaUpgrades[id] = level + 1;
+}
+
+function buySoulUpgrade(id) {
+  const su = SOUL_UPGRADES.find(s => s.id === id);
+  const level = G.soulUpgrades[id] || 0;
+  if (level >= su.max) return;
+  if (G.soulFragments < su.cost) return;
+  G.soulFragments -= su.cost;
+  G.soulUpgrades[id] = level + 1;
+}
+
+// ==============================
+// PRESTIGE
+// ==============================
+function getKarmaEarned() {
+  return G.realmIndex * 10 + G.realmStage * 1;
+}
+
+function reincarnate() {
+  if (G.realmIndex < 1 && G.realmStage < 5) {
+    showToast("Reach at least Qi-Spark Stage V to Reincarnate.", "cyan");
+    return;
+  }
+  const earned = getKarmaEarned();
+  const prevUpgrades = {};
+
+  // Eternal Memory: keep 1 upgrade
+  if (G.karmaUpgrades["eternal_mem"]) {
+    const best = UPGRADES.reduce((b, u) => {
+      const l = G.upgrades[u.id] || 0;
+      return l > (G.upgrades[b] || 0) ? u.id : b;
+    }, UPGRADES[0].id);
+    prevUpgrades[best] = G.upgrades[best] || 0;
+  }
+
+  const prevKarmaUp = { ...G.karmaUpgrades };
+  const prevSoulUp = { ...G.soulUpgrades };
+  const prevKarma = G.karma + earned;
+  const prevSoul = G.soulFragments;
+  const prevReinc = G.reincarnations + 1;
+  const prevAsc = G.ascensions;
+  const prevAch = [...G.achievementsUnlocked];
+  const prevTotalClicks = G.totalClicks;
+  const prevBosses = G.bossesKilled;
+  const prevHeavens = G.heavenLordsKilled;
+  const prevTotalEssence = G.totalEssenceEarned;
+  const prevWave = G.wave;
+
+  G = defaultState();
+  G.karma = prevKarma;
+  G.totalKarma = (G.totalKarma || 0) + earned;
+  G.karmaUpgrades = prevKarmaUp;
+  G.soulFragments = prevSoul;
+  G.soulUpgrades = prevSoulUp;
+  G.reincarnations = prevReinc;
+  G.ascensions = prevAsc;
+  G.achievementsUnlocked = prevAch;
+  G.upgrades = prevUpgrades;
+  G.totalClicks = prevTotalClicks;
+  G.bossesKilled = prevBosses;
+  G.heavenLordsKilled = prevHeavens;
+  G.totalEssenceEarned = prevTotalEssence;
+  G.wave = prevWave;
+
+  // Undying Code: start at Qi-Spark
+  if (G.karmaUpgrades["undying_code"]) {
+    G.realmIndex = 1;
+  }
+
+  showToast(`⟳ Reincarnated! +${earned} Karma`, "gold");
+  showBreakthrough("REINCARNATION");
+}
+
+function ascend() {
+  if (G.realmIndex < 9) return;
+  const soulEarned = 5 + G.reincarnations * 2;
+  const prevSoul = G.soulFragments + soulEarned;
+  const prevTotalSoul = (G.totalSoulFragments || 0) + soulEarned;
+  const prevSoulUp = { ...G.soulUpgrades };
+  const prevAsc = G.ascensions + 1;
+  const prevAch = [...G.achievementsUnlocked];
+  const prevTotalClicks = G.totalClicks;
+  const prevBosses = G.bossesKilled;
+  const prevHeavens = G.heavenLordsKilled;
+  const prevTotalEssence = G.totalEssenceEarned;
+
+  G = defaultState();
+  G.soulFragments = prevSoul;
+  G.totalSoulFragments = prevTotalSoul;
+  G.soulUpgrades = prevSoulUp;
+  G.ascensions = prevAsc;
+  G.achievementsUnlocked = prevAch;
+  G.totalClicks = prevTotalClicks;
+  G.bossesKilled = prevBosses;
+  G.heavenLordsKilled = prevHeavens;
+  G.totalEssenceEarned = prevTotalEssence;
+
+  showToast(`△ ASCENDED! +${soulEarned} Soul Fragments`, "violet");
+  showBreakthrough("ASCENSION");
+}
+
+// ==============================
+// SAVE / LOAD
+// ==============================
+function save() {
+  localStorage.setItem("voidascendant_v1", JSON.stringify(G));
+  document.getElementById("save-indicator").textContent = "⬡ SAVED " + new Date().toLocaleTimeString();
+}
+
+function load() {
+  const raw = localStorage.getItem("voidascendant_v1");
+  if (!raw) return;
+  try {
+    const saved = JSON.parse(raw);
+    G = { ...defaultState(), ...saved };
+    showToast("Save loaded.", "cyan");
+  } catch(e) { console.warn("Load failed", e); }
+}
+
+// ==============================
+// RENDER
+// ==============================
+function render() {
+  const rate = getVeRate();
+  const cp = getClickPower();
+
+  // Header
+  document.getElementById("h-essence").textContent = formatNum(G.essence);
+  document.getElementById("h-rate").textContent = formatNum(rate) + "/s";
+  document.getElementById("h-karma").textContent = formatNum(G.karma);
+  document.getElementById("h-soul").textContent = formatNum(G.soulFragments);
+  document.getElementById("h-wave").textContent = G.wave;
+
+  // Essence display
+  document.getElementById("essence-value").textContent = formatNum(G.essence);
+  document.getElementById("essence-rate").textContent = "+" + formatNum(rate) + " VE/sec  |  Click: +" + formatNum(cp);
+
+  // Realm
+  const realm = REALMS[G.realmIndex];
+  const realmEl = document.getElementById("realm-name");
+  realmEl.textContent = realm.name;
+  realmEl.style.color = realm.color;
+  realmEl.style.textShadow = `0 0 10px ${realm.color}88`;
+  const stageNames = ["I","II","III","IV","V","VI","VII","VIII","IX","X"];
+  document.getElementById("realm-stage").textContent = `Stage ${stageNames[G.realmStage]} / X`;
+  const threshold = getRealmVEThreshold();
+  const pct = Math.min(100, (G.realmProgress / threshold) * 100);
+  document.getElementById("realm-progress-fill").style.width = pct + "%";
+  document.getElementById("realm-progress-text").textContent = `${formatNum(G.realmProgress)} / ${formatNum(threshold)} VE`;
+
+  // Combat
+  renderCombat();
+
+  // Techniques
+  renderTechniques();
+
+  // Upgrades
+  renderUpgrades();
+
+  // Karma / Soul
+  document.getElementById("karma-display").textContent = formatNum(G.karma);
+  document.getElementById("soul-display").textContent = formatNum(G.soulFragments);
+  renderKarmaShop();
+  renderSoulShop();
+
+  // Prestige panel
+  document.getElementById("p-karma").textContent = formatNum(G.karma);
+  document.getElementById("p-soul").textContent = formatNum(G.soulFragments);
+  const karmaPreview = getKarmaEarned();
+  document.getElementById("reincarnate-info").textContent =
+    `Will earn: +${karmaPreview} Karma (requires Qi-Spark Stage V+)`;
+  updateAscendBtn();
+
+  // Achievements
+  renderAchievements();
+}
+
+function renderCombat() {
+  const area = document.getElementById("enemy-area");
+  const noMsg = document.getElementById("no-enemy-msg");
+
+  if (!G.enemies.length) {
+    noMsg.style.display = "block";
+    // Remove enemy cards
+    area.querySelectorAll(".enemy-card").forEach(c => c.remove());
+    return;
+  }
+  noMsg.style.display = "none";
+
+  // Sync enemy cards
+  const existing = {};
+  area.querySelectorAll(".enemy-card").forEach(c => existing[c.dataset.id] = c);
+
+  G.enemies.forEach(e => {
+    let card = existing[e.id];
+    if (!card) {
+      card = document.createElement("div");
+      card.className = "enemy-card";
+      card.dataset.id = e.id;
+      card.innerHTML = `
+        <div class="enemy-name"></div>
+        <div class="enemy-hp-bar"><div class="enemy-hp-fill"></div></div>
+        <div class="enemy-stats"><span class="e-hp"></span><span class="e-type"></span></div>
+      `;
+      area.appendChild(card);
+    }
+    card.querySelector(".enemy-name").textContent = e.name;
+    const pct = Math.max(0, (e.hp / e.maxHp) * 100);
+    card.querySelector(".enemy-hp-fill").style.width = pct + "%";
+    card.querySelector(".e-hp").textContent = `HP: ${formatNum(e.hp)} / ${formatNum(e.maxHp)}`;
+    card.querySelector(".e-type").textContent = e.type.toUpperCase();
+    delete existing[e.id];
+  });
+
+  // Remove stale cards
+  Object.values(existing).forEach(c => c.remove());
+}
+
+function renderTechniques() {
+  const grid = document.getElementById("techniques-grid");
+  const now = Date.now();
+
+  TECHNIQUES.forEach(t => {
+    const unlocked = G.techniquesUnlocked.includes(t.id);
+    const lastUsed = G.techniqueCooldowns[t.id] || 0;
+    const cd = getTechniqueCD(t.id);
+    const elapsed = now - lastUsed;
+    const remaining = Math.max(0, cd - elapsed);
+    const pct = remaining > 0 ? (remaining / cd) * 100 : 0;
+
+    let btn = document.querySelector(`[data-tech="${t.id}"]`);
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.className = "technique-btn";
+      btn.dataset.tech = t.id;
+      btn.onclick = () => useTechnique(t.id);
+      btn.innerHTML = `
+        <div class="tech-name"></div>
+        <div class="tech-desc"></div>
+        <div class="tech-cd"></div>
+        <div class="tech-cooldown-bar"></div>
+      `;
+      grid.appendChild(btn);
+    }
+
+    btn.querySelector(".tech-name").textContent = t.name;
+    btn.querySelector(".tech-desc").textContent = t.desc;
+    btn.querySelector(".tech-cd").textContent = remaining > 0 ? (remaining/1000).toFixed(1) + "s" : "READY";
+    btn.querySelector(".tech-cooldown-bar").style.width = pct + "%";
+    btn.disabled = !unlocked || remaining > 0;
+    if (!unlocked) btn.title = "Locked — reach higher realm";
+  });
+}
+
+function renderUpgrades() {
+  const list = document.getElementById("upgrades-list");
+  UPGRADES.forEach(up => {
+    const level = G.upgrades[up.id] || 0;
+    const cost = getUpgradeCost(up);
+    const maxed = level >= up.maxLevel;
+    const canAfford = G.essence >= cost && !maxed;
+
+    let card = document.querySelector(`[data-upgrade="${up.id}"]`);
+    if (!card) {
+      card = document.createElement("div");
+      card.className = "upgrade-card";
+      card.dataset.upgrade = up.id;
+      card.onclick = () => { buyUpgrade(up.id); };
+      card.innerHTML = `
+        <div class="upgrade-header">
+          <div class="upgrade-name"></div>
+          <div class="upgrade-count"></div>
+        </div>
+        <div class="upgrade-effect"></div>
+        <div class="upgrade-cost"></div>
+      `;
+      list.appendChild(card);
+    }
+
+    card.querySelector(".upgrade-name").textContent = up.name;
+    card.querySelector(".upgrade-count").textContent = `${level}/${up.maxLevel}`;
+    card.querySelector(".upgrade-effect").textContent = up.effect;
+
+    const costEl = card.querySelector(".upgrade-cost");
+    if (maxed) {
+      costEl.textContent = "MAXED";
+      card.className = "upgrade-card maxed";
+    } else {
+      costEl.textContent = formatNum(cost) + " VE";
+      costEl.className = "upgrade-cost " + (canAfford ? "can-afford" : "cannot-afford");
+      card.className = "upgrade-card" + (canAfford ? " affordable" : "");
+    }
+  });
+}
+
+function renderKarmaShop() {
+  const shop = document.getElementById("karma-shop");
+  KARMA_UPGRADES.forEach(ku => {
+    const level = G.karmaUpgrades[ku.id] || 0;
+    const maxed = level >= ku.max;
+    const cost = getKarmaUpgradeCost(ku);
+    const canAfford = G.karma >= cost && !maxed;
+
+    let card = document.querySelector(`[data-karma="${ku.id}"]`);
+    if (!card) {
+      card = document.createElement("div");
+      card.className = "karma-upgrade";
+      card.dataset.karma = ku.id;
+      card.onclick = () => { buyKarmaUpgrade(ku.id); };
+      card.innerHTML = `
+        <div class="ku-header">
+          <div class="ku-name"></div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim)"></div>
+        </div>
+        <div class="ku-effect"></div>
+        <div class="ku-cost"></div>
+      `;
+      shop.appendChild(card);
+    }
+
+    card.querySelector(".ku-name").textContent = ku.name;
+    card.querySelectorAll(".ku-header > div")[1].textContent = `${level}/${ku.max}`;
+    card.querySelector(".ku-effect").textContent = ku.desc;
+    const costEl = card.querySelector(".ku-cost");
+    if (maxed) {
+      costEl.textContent = "MAXED";
+      card.className = "karma-upgrade maxed";
+    } else {
+      costEl.textContent = cost + " Karma";
+      costEl.style.color = canAfford ? "#6eff90" : "var(--text-dim)";
+      card.className = "karma-upgrade";
+    }
+  });
+}
+
+function renderSoulShop() {
+  const shop = document.getElementById("soul-shop");
+  SOUL_UPGRADES.forEach(su => {
+    const level = G.soulUpgrades[su.id] || 0;
+    const maxed = level >= su.max;
+    const canAfford = G.soulFragments >= su.cost && !maxed;
+
+    let card = document.querySelector(`[data-soul="${su.id}"]`);
+    if (!card) {
+      card = document.createElement("div");
+      card.className = "soul-upgrade";
+      card.dataset.soul = su.id;
+      card.onclick = () => { buySoulUpgrade(su.id); };
+      card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <div class="su-name"></div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim)"></div>
+        </div>
+        <div class="su-effect"></div>
+        <div class="su-cost"></div>
+      `;
+      shop.appendChild(card);
+    }
+
+    card.querySelector(".su-name").textContent = su.name;
+    card.querySelectorAll("[style*='display:flex'] > div")[1].textContent = `${level}/${su.max}`;
+    card.querySelector(".su-effect").textContent = su.desc;
+    const costEl = card.querySelector(".su-cost");
+    if (maxed) {
+      costEl.textContent = "MAXED";
+      card.className = "soul-upgrade maxed";
+    } else {
+      costEl.textContent = su.cost + " Soul Frags";
+      costEl.style.color = canAfford ? "#c090ff" : "var(--text-dim)";
+      card.className = "soul-upgrade";
+    }
+  });
+}
+
+function renderAchievements() {
+  const list = document.getElementById("achievements-list");
+  ACHIEVEMENTS.forEach(ach => {
+    const unlocked = G.achievementsUnlocked.includes(ach.id);
+    const earned = ach.check(G);
+
+    if (earned && !unlocked) {
+      G.achievementsUnlocked.push(ach.id);
+      showToast("🏆 Achievement: " + ach.label, "gold");
+    }
+
+    let el = document.querySelector(`[data-ach="${ach.id}"]`);
+    if (!el) {
+      el = document.createElement("div");
+      el.className = "achievement";
+      el.dataset.ach = ach.id;
+      el.textContent = ach.label;
+      list.appendChild(el);
+    }
+    el.className = "achievement" + (unlocked || earned ? " unlocked" : "");
+  });
+}
+
+function updateAscendBtn() {
+  const btn = document.getElementById("ascend-btn");
+  const info = document.getElementById("ascend-info");
+  if (G.realmIndex >= 9) {
+    btn.disabled = false;
+    const soulEarned = 5 + G.reincarnations * 2;
+    info.textContent = `Will earn: +${soulEarned} Soul Fragments`;
+  } else {
+    btn.disabled = true;
+    info.textContent = "Reach The Last Axiom to Ascend.";
+  }
+}
+
+// ==============================
+// TABS
+// ==============================
+function switchTab(tab) {
+  document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("tab-" + tab).classList.add("active");
+  document.querySelectorAll(".tab-btn").forEach(b => {
+    if (b.textContent.toLowerCase().trim().startsWith(tab.substring(0,4))) b.classList.add("active");
+  });
+}
+
+// Fix tab button active tracking
+document.querySelectorAll(".tab-btn").forEach((btn, i) => {
+  const tabs = ["upgrades","karma","soul","prestige"];
+  btn.onclick = () => {
+    switchTab(tabs[i]);
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  };
+});
+
+// ==============================
+// TOAST & FLOAT
+// ==============================
+function showToast(msg, type = "cyan") {
+  const container = document.getElementById("toast-container");
+  const toast = document.createElement("div");
+  toast.className = "toast " + type;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function showFloatNum(text, x, y, color) {
+  const el = document.createElement("div");
+  el.className = "float-num";
+  el.style.color = color;
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+// ==============================
+// PARTICLES
+// ==============================
+function initParticles() {
+  const canvas = document.getElementById("particles-canvas");
+  const ctx = canvas.getContext("2d");
+  let W, H, particles;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function mkParticle() {
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 1.5 + 0.3,
+      alpha: Math.random() * 0.4 + 0.1,
+      color: Math.random() > 0.5 ? "#00f5ff" : "#9b59ff",
+    };
+  }
+
+  function init() {
+    resize();
+    particles = Array.from({length: 80}, mkParticle);
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0) p.x = W;
+      if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H;
+      if (p.y > H) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = p.alpha;
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(tick);
+  }
+
+  window.addEventListener("resize", resize);
+  init();
+  tick();
+}
+
+// ==============================
+// GAME LOOP
+// ==============================
+function gameLoop() {
+  const rate = getVeRate();
+  addEssence(rate / 20); // 50ms tick = /20
+  G.totalEssenceEarned += rate / 20;
+
+  // Wave timer
+  G.waveTimer -= 0.05;
+  if (G.waveTimer <= 0) {
+    G.wave++;
+    G.waveTimer = Math.max(10, 30 - Math.floor(G.wave / 10));
+    spawnWave();
+    showToast(`⚔ Wave ${G.wave} begins!`, "cyan");
+  }
+  document.getElementById("wave-timer").textContent = Math.ceil(G.waveTimer);
+  document.getElementById("wave-num").textContent = G.wave;
+  document.getElementById("h-wave").textContent = G.wave;
+}
+
+// Auto-attack interval
+let autoAttackTimer = null;
+function startAutoAttack() {
+  if (autoAttackTimer) clearInterval(autoAttackTimer);
+  autoAttackTimer = setInterval(() => {
+    autoAttackTick();
+  }, 1000);
+}
+
+// ==============================
+// INIT
+// ==============================
+load();
+initParticles();
+spawnWave();
+startAutoAttack();
+
+// Main tick
+setInterval(gameLoop, 50);
+
+// Render tick
+setInterval(render, 100);
+
+// Auto-save
+setInterval(save, 30000);
+
+// Save on close
+window.addEventListener("beforeunload", save);
+
+// Initial render
+render();
+</script>
+</body>
+</html>
