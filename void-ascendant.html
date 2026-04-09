@@ -908,6 +908,10 @@ body::before {
         <span id="wave-label">Wave <span id="wave-num">1</span></span>
         <span id="wave-timer-label">Next: <span id="wave-timer">30</span>s</span>
       </div>
+
+      <!-- ANIMATED ARENA -->
+      <canvas id="arena-canvas" width="252" height="130" style="display:block;width:100%;border:1px solid var(--border);border-radius:4px;background:#030a12;margin-bottom:8px;"></canvas>
+
       <div id="enemy-area">
         <div id="no-enemy-msg">⬡ Awaiting enemies...</div>
       </div>
@@ -1988,6 +1992,609 @@ function startAutoAttack() {
   }, 1000);
 }
 
+// ==============================
+// ARENA ANIMATION ENGINE
+// ==============================
+(function initArena() {
+  const canvas = document.getElementById("arena-canvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+
+  // -- dimensions (logical px at 2× for sharpness) --
+  const W = 252, H = 130;
+  canvas.width = W * 2; canvas.height = H * 2;
+  canvas.style.width = W + "px"; canvas.style.height = H + "px";
+  ctx.scale(2, 2);
+
+  // ---- HERO STATE ----
+  const hero = {
+    x: 38, y: 78,            // feet position
+    frame: 0, frameTick: 0,
+    state: "idle",            // idle | attack | cast
+    attackTimer: 0,
+    castTimer: 0,
+    color: "#00f5ff",
+    glowColor: "#00f5ff88",
+  };
+
+  // ---- ARENA ENEMIES ----
+  const arenaEnemies = [];
+  let lastEnemySync = 0;
+
+  // ---- PROJECTILES ----
+  const projectiles = [];
+
+  // ---- PARTICLES ----
+  const arenaParts = [];
+
+  // ---- IMPACT FLASHES ----
+  const impacts = [];
+
+  // roundRect polyfill
+  if (!ctx.roundRect) {
+    ctx.roundRect = function(x, y, w, h, r) {
+      r = Math.min(r, w/2, h/2);
+      this.beginPath();
+      this.moveTo(x+r, y);
+      this.lineTo(x+w-r, y);
+      this.quadraticCurveTo(x+w, y, x+w, y+r);
+      this.lineTo(x+w, y+h-r);
+      this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      this.lineTo(x+r, y+h);
+      this.quadraticCurveTo(x, y+h, x, y+h-r);
+      this.lineTo(x, y+r);
+      this.quadraticCurveTo(x, y, x+r, y);
+      this.closePath();
+    };
+  }
+
+  // ---- ground line ----
+  const GROUND_Y = 90;
+
+  // sync with game enemies every 200ms
+  function syncEnemies() {
+    const now = Date.now();
+    if (now - lastEnemySync < 200) return;
+    lastEnemySync = now;
+
+    const gameEnemies = (typeof G !== "undefined") ? G.enemies : [];
+
+    // add new arena enemies
+    gameEnemies.forEach((ge, i) => {
+      const existing = arenaEnemies.find(ae => ae.id === ge.id);
+      if (!existing) {
+        arenaEnemies.push({
+          id: ge.id,
+          name: ge.name,
+          type: ge.type || "common",
+          x: W + 30 + i * 28,
+          y: GROUND_Y,
+          targetX: W - 60 - i * 28,
+          speed: ge.type === "boss" ? 0.22 : ge.type === "miniboss" ? 0.3 : 0.4 + Math.random()*0.15,
+          hp: ge.hp,
+          maxHp: ge.maxHp,
+          frame: 0,
+          frameTick: 0,
+          hitFlash: 0,
+          color: ge.type === "boss" ? "#f5c842"
+               : ge.type === "miniboss" ? "#9b59ff"
+               : ge.type === "tanky"    ? "#ff6644"
+               : ge.type === "medium"   ? "#ff4466"
+               : "#ff2244",
+          dead: false,
+          deathTimer: 0,
+          scale: ge.type === "boss" ? 1.5
+               : ge.type === "miniboss" ? 1.25
+               : ge.type === "tanky"    ? 1.1
+               : 1,
+        });
+      } else {
+        // update hp
+        if (ge.hp < existing.hp) existing.hitFlash = 8;
+        existing.hp = ge.hp;
+        existing.maxHp = ge.maxHp;
+      }
+    });
+
+    // mark removed enemies as dead
+    arenaEnemies.forEach(ae => {
+      if (!ae.dead && !gameEnemies.find(ge => ge.id === ae.id)) {
+        ae.dead = true;
+        ae.deathTimer = 30;
+        spawnDeathBurst(ae.x, ae.y - 12, ae.color);
+      }
+    });
+  }
+
+  // ---- FIRE PROJECTILE from hero ----
+  function fireProjectile(targetX, targetY, color, size, type) {
+    projectiles.push({ x: hero.x + 14, y: hero.y - 18, tx: targetX, ty: targetY,
+                       color: color || "#00f5ff", size: size || 4,
+                       type: type || "bolt",
+                       speed: 4.5, hit: false, life: 40 });
+  }
+
+  function spawnDeathBurst(x, y, color) {
+    for (let i = 0; i < 18; i++) {
+      const ang = (Math.PI * 2 * i) / 18 + Math.random() * 0.3;
+      const spd = 1.5 + Math.random() * 2.5;
+      arenaParts.push({ x, y, vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd - 1.5,
+                        color, alpha: 1, size: 1.5 + Math.random()*2, life: 25 + Math.random()*15 });
+    }
+    impacts.push({ x, y, r: 0, maxR: 22, color, alpha: 1, life: 14 });
+  }
+
+  function spawnHitSparks(x, y, color) {
+    for (let i = 0; i < 6; i++) {
+      const ang = -Math.PI * 0.7 + Math.random() * Math.PI * 0.4 - Math.PI;
+      const spd = 1.2 + Math.random() * 2;
+      arenaParts.push({ x, y, vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd,
+                        color, alpha: 1, size: 1 + Math.random()*1.5, life: 10 + Math.random()*8 });
+    }
+    impacts.push({ x, y, r: 0, maxR: 10, color, alpha: 0.85, life: 8 });
+  }
+
+  // ---- AUTO FIRE LOGIC ----
+  let autoFireTimer = 0;
+  function autoFireTick(dt) {
+    autoFireTimer -= dt;
+    if (autoFireTimer <= 0) {
+      const liveEnemies = arenaEnemies.filter(ae => !ae.dead);
+      if (liveEnemies.length > 0) {
+        hero.state = "attack";
+        hero.attackTimer = 14;
+        const target = liveEnemies[0];
+        const projColor = "#00f5ff";
+        fireProjectile(target.x, target.y - 12, projColor, 4, "bolt");
+        // bigger blast on technique use or random 10% of shots
+        if (Math.random() < 0.12) {
+          setTimeout(() => fireProjectile(target.x, target.y - 12, "#9b59ff", 7, "orb"), 80);
+        }
+        autoFireTimer = 28 + Math.floor(Math.random()*8);
+      } else {
+        hero.state = "idle";
+        autoFireTimer = 20;
+      }
+    }
+  }
+
+  // ---- DRAW HERO ----
+  function drawHero(t) {
+    const x = hero.x, y = hero.y;
+    const bob = hero.state === "idle" ? Math.sin(t * 0.06) * 1.5 : 0;
+    const attackLean = (hero.state === "attack" && hero.attackTimer > 6) ? 3 : 0;
+
+    ctx.save();
+    // glow
+    ctx.shadowColor = hero.glowColor;
+    ctx.shadowBlur = 8;
+
+    // -- legs --
+    ctx.strokeStyle = "#0088aa";
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    const legSwing = hero.state === "idle" ? Math.sin(t * 0.07) * 3 : 0;
+    // left leg
+    ctx.beginPath();
+    ctx.moveTo(x + 5, y - 7 + bob);
+    ctx.lineTo(x + 2 - legSwing, y + bob);
+    ctx.stroke();
+    // right leg
+    ctx.beginPath();
+    ctx.moveTo(x + 9, y - 7 + bob);
+    ctx.lineTo(x + 12 + legSwing, y + bob);
+    ctx.stroke();
+
+    // -- torso --
+    ctx.fillStyle = "#004466";
+    ctx.strokeStyle = "#00c8d8";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(x + 1, y - 20 + bob + attackLean, 13, 14, 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // -- armor trim --
+    ctx.strokeStyle = "#00f5ff";
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(x + 1, y - 16 + bob + attackLean);
+    ctx.lineTo(x + 14, y - 16 + bob + attackLean);
+    ctx.stroke();
+
+    // -- arm (attack pose) --
+    ctx.strokeStyle = "#00ccdd";
+    ctx.lineWidth = 2;
+    const armAngle = (hero.state === "attack" && hero.attackTimer > 4) ? -0.3 : 0.2;
+    const armLen = 12;
+    const ax = x + 14 + Math.cos(armAngle) * armLen;
+    const ay = y - 15 + bob + attackLean + Math.sin(armAngle) * armLen;
+    ctx.beginPath();
+    ctx.moveTo(x + 14, y - 15 + bob + attackLean);
+    ctx.lineTo(ax, ay);
+    ctx.stroke();
+    // hand orb
+    if (hero.state === "attack" && hero.attackTimer > 2) {
+      ctx.fillStyle = "#00f5ff";
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(ax, ay, 3, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // -- head --
+    ctx.fillStyle = "#003344";
+    ctx.strokeStyle = "#00ddee";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(x + 7, y - 26 + bob + attackLean, 7, 0, Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+
+    // -- visor glow --
+    ctx.fillStyle = "#00f5ff";
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.ellipse(x + 8, y - 26 + bob + attackLean, 4, 2, 0.2, 0, Math.PI*2);
+    ctx.fill();
+
+    // -- cape / energy trail --
+    ctx.strokeStyle = "#9b59ff44";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x + 2, y - 18 + bob);
+    ctx.bezierCurveTo(x - 5, y - 12 + bob, x - 8, y - 6 + bob, x - 3, y + bob);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // ---- DRAW ENEMY ----
+  function drawEnemy(ae, t) {
+    if (ae.dead) return;
+    const x = ae.x, y = ae.y;
+    const bob = Math.sin(t * 0.08 + ae.id % 10) * 1.2;
+    const sc = ae.scale;
+    const c = ae.hitFlash > 0 ? "#ffffff" : ae.color;
+
+    ctx.save();
+    ctx.shadowColor = c;
+    ctx.shadowBlur = ae.hitFlash > 0 ? 14 : 6;
+
+    // walk animation — sway legs
+    const stride = Math.sin(t * 0.12) * 3 * sc;
+
+    // legs
+    ctx.strokeStyle = c;
+    ctx.lineWidth = 2 * sc;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(x - 3*sc, y - 6*sc);
+    ctx.lineTo(x - 5*sc + stride, y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + 3*sc, y - 6*sc);
+    ctx.lineTo(x + 5*sc - stride, y);
+    ctx.stroke();
+
+    // arms stretched forward (charging)
+    ctx.strokeStyle = c + "bb";
+    ctx.lineWidth = 1.8 * sc;
+    ctx.beginPath();
+    ctx.moveTo(x - 6*sc, y - 12*sc + bob);
+    ctx.lineTo(x - 12*sc, y - 10*sc + bob + stride*0.5);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + 6*sc, y - 12*sc + bob);
+    ctx.lineTo(x + 12*sc, y - 10*sc + bob - stride*0.5);
+    ctx.stroke();
+
+    // body
+    ctx.fillStyle = c + "33";
+    ctx.strokeStyle = c;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    if (ae.type === "boss" || ae.type === "miniboss") {
+      ctx.roundRect(x - 8*sc, y - 22*sc + bob, 16*sc, 18*sc, 3);
+    } else {
+      ctx.roundRect(x - 6*sc, y - 18*sc + bob, 12*sc, 14*sc, 2);
+    }
+    ctx.fill(); ctx.stroke();
+
+    // head
+    ctx.fillStyle = c + "55";
+    ctx.strokeStyle = c;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (ae.type === "boss") {
+      // crown-like jagged head
+      ctx.arc(x, y - 28*sc + bob, 8*sc, 0, Math.PI*2);
+    } else {
+      ctx.arc(x, y - 24*sc + bob, 6*sc, 0, Math.PI*2);
+    }
+    ctx.fill(); ctx.stroke();
+
+    // eyes — glowing red or matching color
+    ctx.fillStyle = "#fff";
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    const ey = ae.type === "boss" ? y - 28*sc + bob : y - 24*sc + bob;
+    ctx.arc(x - 2.5*sc, ey, 1.5*sc, 0, Math.PI*2);
+    ctx.arc(x + 2.5*sc, ey, 1.5*sc, 0, Math.PI*2);
+    ctx.fill();
+
+    // boss horns
+    if (ae.type === "boss" || ae.type === "miniboss") {
+      ctx.strokeStyle = c;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - 5*sc, ey - 6*sc);
+      ctx.lineTo(x - 8*sc, ey - 14*sc);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x + 5*sc, ey - 6*sc);
+      ctx.lineTo(x + 8*sc, ey - 14*sc);
+      ctx.stroke();
+    }
+
+    // HP bar above
+    const barW = 28 * sc, barH = 3;
+    const bx = x - barW/2, by = y - (ae.type === "boss" ? 46 : 38)*sc + bob;
+    ctx.fillStyle = "#1a0a0d";
+    ctx.fillRect(bx, by, barW, barH);
+    const hpFrac = Math.max(0, ae.hp / ae.maxHp);
+    ctx.fillStyle = hpFrac > 0.5 ? ae.color : hpFrac > 0.25 ? "#ff8800" : "#ff2244";
+    ctx.fillRect(bx, by, barW * hpFrac, barH);
+
+    // void aura pulse on boss
+    if (ae.type === "boss" || ae.type === "miniboss") {
+      ctx.strokeStyle = c + "33";
+      ctx.lineWidth = 1.5;
+      const pulse = Math.abs(Math.sin(t * 0.06)) * 8;
+      ctx.beginPath();
+      ctx.arc(x, y - 18*sc + bob, 16*sc + pulse, 0, Math.PI*2);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+    if (ae.hitFlash > 0) ae.hitFlash--;
+  }
+
+  // ---- DRAW PROJECTILE ----
+  function drawProjectile(p) {
+    ctx.save();
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = p.type === "orb" ? 18 : 10;
+    if (p.type === "orb") {
+      // pulsing orb
+      const pulseR = p.size + Math.sin(Date.now()*0.02) * 1.5;
+      const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, pulseR * 2);
+      grad.addColorStop(0, "#ffffff");
+      grad.addColorStop(0.3, p.color);
+      grad.addColorStop(1, p.color + "00");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, pulseR * 2, 0, Math.PI*2);
+      ctx.fill();
+    } else {
+      // cyan energy bolt — elongated
+      const dx = p.tx - p.x, dy = p.ty - p.y;
+      const ang = Math.atan2(dy, dx);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(ang);
+      const grad = ctx.createLinearGradient(-12, 0, 6, 0);
+      grad.addColorStop(0, p.color + "00");
+      grad.addColorStop(0.5, p.color);
+      grad.addColorStop(1, "#ffffff");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 10, p.size * 0.6, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ---- DRAW GROUND ----
+  function drawGround() {
+    ctx.strokeStyle = "#1a3a5c66";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y + 2);
+    ctx.lineTo(W, GROUND_Y + 2);
+    ctx.stroke();
+    // subtle grid lines
+    ctx.strokeStyle = "#0a1a2a55";
+    ctx.lineWidth = 0.5;
+    for (let gx = 0; gx < W; gx += 24) {
+      ctx.beginPath();
+      ctx.moveTo(gx, GROUND_Y + 2);
+      ctx.lineTo(gx + 12, H);
+      ctx.stroke();
+    }
+  }
+
+  // ---- DRAW IMPACT RINGS ----
+  function drawImpacts() {
+    impacts.forEach(imp => {
+      ctx.save();
+      ctx.strokeStyle = imp.color;
+      ctx.globalAlpha = imp.alpha;
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = imp.color;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(imp.x, imp.y, imp.r, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+      imp.r += (imp.maxR - imp.r) * 0.35;
+      imp.alpha -= 0.07;
+      imp.life--;
+    });
+    for (let i = impacts.length - 1; i >= 0; i--) if (impacts[i].life <= 0) impacts.splice(i,1);
+  }
+
+  // ---- DRAW PARTICLES ----
+  function drawParticles() {
+    arenaParts.forEach(p => {
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+      p.x += p.vx; p.y += p.vy;
+      p.vy += 0.08;
+      p.alpha -= 1 / p.life;
+      p.life--;
+    });
+    for (let i = arenaParts.length - 1; i >= 0; i--) if (arenaParts[i].life <= 0) arenaParts.splice(i,1);
+  }
+
+  // ---- BG ambient particles ----
+  const bgParts = Array.from({length:20}, () => ({
+    x: Math.random()*W, y: Math.random()*H,
+    vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.2,
+    r: Math.random()*1 + 0.3,
+    alpha: Math.random()*0.3 + 0.05,
+    color: Math.random() > 0.5 ? "#00f5ff" : "#9b59ff"
+  }));
+
+  function drawBgParts() {
+    bgParts.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  // ---- MAIN LOOP ----
+  let t = 0;
+  function arenaLoop() {
+    t++;
+    syncEnemies();
+    autoFireTick(1);
+
+    // update hero timers
+    if (hero.attackTimer > 0) hero.attackTimer--;
+    else if (hero.state === "attack") hero.state = "idle";
+
+    // move arena enemies
+    arenaEnemies.forEach(ae => {
+      if (ae.dead) {
+        ae.deathTimer--;
+        return;
+      }
+      if (ae.x > ae.targetX) ae.x -= ae.speed;
+      else ae.x = ae.targetX;
+    });
+    // remove fully gone dead enemies
+    for (let i = arenaEnemies.length - 1; i >= 0; i--) {
+      if (arenaEnemies[i].dead && arenaEnemies[i].deathTimer <= 0) arenaEnemies.splice(i,1);
+    }
+
+    // move projectiles
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+      const p = projectiles[i];
+      const dx = p.tx - p.x, dy = p.ty - p.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < p.speed + 4 || p.life <= 0) {
+        // hit!
+        spawnHitSparks(p.x, p.y, p.color);
+        projectiles.splice(i, 1);
+      } else {
+        const nx = dx/dist, ny = dy/dist;
+        p.x += nx * p.speed;
+        p.y += ny * p.speed;
+        p.life--;
+      }
+    }
+
+    // -- DRAW --
+    ctx.clearRect(0, 0, W, H);
+
+    // deep bg gradient
+    ctx.fillStyle = "#020810";
+    ctx.fillRect(0, 0, W, H);
+
+    drawBgParts();
+    drawGround();
+
+    // draw hero energy aura when attacking
+    if (hero.state === "attack") {
+      ctx.save();
+      ctx.globalAlpha = 0.15 + Math.sin(t*0.2)*0.05;
+      ctx.strokeStyle = "#00f5ff";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(hero.x + 7, hero.y - 18, 20, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // draw enemies (behind projectiles)
+    arenaEnemies.forEach(ae => drawEnemy(ae, t));
+
+    // draw projectiles
+    projectiles.forEach(p => drawProjectile(p));
+
+    // draw impacts & particles
+    drawImpacts();
+    drawParticles();
+
+    // draw hero (on top)
+    drawHero(t);
+
+    requestAnimationFrame(arenaLoop);
+  }
+
+  arenaLoop();
+
+  // ---- HOOK: trigger hero attack animation on real clicks & auto-attack ----
+  const origHandleClick = window.handleClick;
+  window.handleClick = function(e) {
+    hero.state = "attack";
+    hero.attackTimer = 18;
+    hero.glowColor = "#00f5ffcc";
+    // fire extra projectile toward first enemy on real click
+    const liveEnemies = arenaEnemies.filter(ae => !ae.dead);
+    if (liveEnemies.length) {
+      const tgt = liveEnemies[0];
+      fireProjectile(tgt.x, tgt.y - 12, "#00f5ff", 5, "bolt");
+      fireProjectile(tgt.x, tgt.y - 12, "#00f5ff", 3, "bolt");
+    }
+    if (origHandleClick) origHandleClick(e);
+  };
+
+  // hook technique use to fire dramatic orb
+  const origUseTechnique = window.useTechnique;
+  window.useTechnique = function(id) {
+    hero.state = "attack";
+    hero.attackTimer = 28;
+    hero.glowColor = "#9b59ffcc";
+    const liveEnemies = arenaEnemies.filter(ae => !ae.dead);
+    if (liveEnemies.length) {
+      liveEnemies.forEach((tgt, i) => {
+        setTimeout(() => {
+          fireProjectile(tgt.x, tgt.y - 14, "#9b59ff", 8, "orb");
+          fireProjectile(tgt.x, tgt.y - 14, "#00f5ff", 5, "bolt");
+        }, i * 80);
+      });
+    }
+    setTimeout(() => { hero.glowColor = "#00f5ff88"; }, 600);
+    if (origUseTechnique) origUseTechnique(id);
+  };
+
+})();
 // ==============================
 // INIT
 // ==============================
